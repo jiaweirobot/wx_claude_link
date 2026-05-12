@@ -4,6 +4,10 @@
 
 A tool that bridges personal WeChat to your local Claude Code. Chat with Claude from your phone via WeChat — text, images, permission approvals, slash commands, all supported. Includes both CLI and **Electron desktop GUI**.
 
+## Screenshot
+
+![WeChat Claude Code - Windows Desktop](docs/image.png)
+
 ## Features
 
 - **Desktop GUI** — Electron app with one-click login, start/stop, status, and log viewer

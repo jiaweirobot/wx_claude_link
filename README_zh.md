@@ -4,6 +4,10 @@
 
 将个人微信桥接到本地 Claude Code 的工具。通过手机微信与 Claude 对话——文字、图片、权限审批、斜杠命令，全部支持。提供 CLI 和 **Electron 桌面 GUI** 两种运行模式。
 
+## 界面截图
+
+![WeChat Claude Code - Windows 桌面版](docs/image.png)
+
 ## 功能特性
 
 - **桌面 GUI** — Electron 应用，一键扫码登录、启停服务、查看状态和日志
