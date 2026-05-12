@@ -2,10 +2,11 @@
 
 **English** | [中文](README_zh.md)
 
-A [Claude Code](https://claude.ai/claude-code) Skill that bridges personal WeChat to your local Claude Code. Chat with Claude from your phone via WeChat — text, images, permission approvals, slash commands, all supported.
+A tool that bridges personal WeChat to your local Claude Code. Chat with Claude from your phone via WeChat — text, images, permission approvals, slash commands, all supported. Includes both CLI and **Electron desktop GUI**.
 
 ## Features
 
+- **Desktop GUI** — Electron app with one-click login, start/stop, status, and log viewer
 - **Real-time progress updates** — see Claude's tool calls (🔧 Bash, 📖 Read, 🔍 Glob…) as they happen
 - **Thinking preview** — get a 💭 preview of Claude's reasoning before each tool call
 - **Interrupt support** — send a new message mid-query to abort and redirect Claude
@@ -15,25 +16,22 @@ A [Claude Code](https://claude.ai/claude-code) Skill that bridges personal WeCha
 - Permission approval — reply `y`/`n` in WeChat to approve Claude's tool use
 - Slash commands — `/help`, `/clear`, `/model`, `/prompt`, `/status`, `/skills`, and more
 - Launch any installed Claude Code skill from WeChat
-- Cross-platform — macOS (launchd), Linux (systemd + nohup fallback)
+- Cross-platform — **Windows**, macOS, Linux
 - Session persistence — resume conversations across messages
 - Rate-limit safe — automatic exponential backoff on WeChat API throttling
 
 ## Prerequisites
 
 - Node.js >= 18
-- macOS or Linux
 - Personal WeChat account (QR code binding required)
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) with `@anthropic-ai/claude-agent-sdk` installed
   > **Note:** The SDK supports third-party API providers (e.g. OpenRouter, AWS Bedrock, custom OpenAI-compatible endpoints) — set `ANTHROPIC_BASE_URL` and `ANTHROPIC_API_KEY` accordingly.
 
 ## Installation
 
-Clone into your Claude Code skills directory:
-
 ```bash
-git clone https://github.com/Wechat-ggGitHub/wechat-claude-code.git ~/.claude/skills/wechat-claude-code
-cd ~/.claude/skills/wechat-claude-code
+git clone https://github.com/Wechat-ggGitHub/wechat-claude-code.git
+cd wechat-claude-code
 npm install
 ```
 
@@ -41,37 +39,41 @@ npm install
 
 ## Quick Start
 
-### 1. Setup (first time only)
-
-Scan QR code to bind your WeChat account:
+### Option A: Desktop GUI (Recommended)
 
 ```bash
-cd ~/.claude/skills/wechat-claude-code
+npm run electron
+```
+
+Click **"扫码登录"** to scan QR code, then **"启动服务"** to start the bridge.
+
+### Option B: CLI
+
+#### 1. Setup (first time only)
+
+```bash
 npm run setup
 ```
 
 A QR code image will open — scan it with WeChat. Then configure your working directory.
 
-### 2. Start the daemon
+#### 2. Start the service
 
 ```bash
-npm run daemon -- start
+# Foreground
+node dist/main.js start
+
+# Background daemon
+node scripts/daemon.js start
 ```
 
-- **macOS**: registers a launchd agent for auto-start and auto-restart
-- **Linux**: uses systemd user service (falls back to nohup if systemd unavailable)
-
-### 3. Chat in WeChat
-
-Send any message in WeChat to start chatting with Claude Code.
-
-### 4. Manage the service
+#### 3. Manage the daemon
 
 ```bash
-npm run daemon -- status   # Check if running
-npm run daemon -- stop     # Stop the daemon
-npm run daemon -- restart  # Restart (after code updates)
-npm run daemon -- logs     # View recent logs
+node scripts/daemon.js status    # Check if running
+node scripts/daemon.js stop      # Stop the daemon
+node scripts/daemon.js restart   # Restart
+node scripts/daemon.js logs      # View recent logs
 ```
 
 ## WeChat Commands
@@ -112,14 +114,48 @@ You can switch permission mode with `/permission <mode>`:
 ## How It Works
 
 ```
-WeChat (phone) ←→ ilink bot API ←→ Node.js daemon ←→ Claude Code SDK (local)
+WeChat (phone) ←→ ilink bot API ←→ Node.js bridge ←→ Claude Code SDK (local)
+                                         ↑
+                              CLI or Electron GUI
 ```
 
-- The daemon long-polls WeChat's ilink bot API for new messages
+- The bridge long-polls WeChat's ilink bot API for new messages
 - Messages are forwarded to Claude Code via `@anthropic-ai/claude-agent-sdk`
 - Tool calls and thinking previews are streamed back as Claude works
 - Responses are sent back to WeChat with automatic rate-limit retry
-- Platform-native service management keeps the daemon running (launchd on macOS, systemd/nohup on Linux)
+- Desktop GUI provides visual control (login, start/stop, status, logs)
+
+## Project Structure
+
+```
+src/
+├── daemon.ts            # Core daemon controller (start/stop/getStatus)
+├── login-flow.ts        # QR login flow (decoupled from UI)
+├── main.ts              # CLI entry point
+├── session.ts           # Session state persistence
+├── permission.ts        # Permission broker (y/n approval with timeout)
+├── config.ts            # Config file management
+├── claude/
+│   ├── provider.ts      # Claude Agent SDK wrapper (streaming, permissions)
+│   └── skill-scanner.ts # Discover installed skills
+├── commands/
+│   ├── router.ts        # Slash command dispatcher
+│   └── handlers.ts      # Command implementations
+└── wechat/
+    ├── api.ts           # ilink bot HTTP client
+    ├── monitor.ts       # Long-poll message loop
+    ├── send.ts          # Outbound message sender
+    ├── login.ts         # QR code login protocol
+    ├── media.ts         # Image download + decrypt
+    └── ...              # Types, crypto, CDN, accounts
+
+electron/
+├── main.cjs             # Electron main process (IPC handlers)
+├── preload.cjs          # Secure IPC bridge
+├── index.html           # Desktop UI
+├── renderer.js          # Frontend logic
+└── styles.css           # WeChat-green themed styles
+```
 
 ## Data
 
@@ -134,11 +170,16 @@ All data is stored in `~/.wechat-claude-code/`:
 └── logs/           # Rotating logs (daily, 30-day retention)
 ```
 
+## Architecture
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed runtime logic, message flow diagrams, and module dependency analysis.
+
 ## Development
 
 ```bash
-npm run dev    # Watch mode — auto-compile on TypeScript changes
-npm run build  # Compile TypeScript
+npm run dev       # Watch mode — auto-compile on TypeScript changes
+npm run build     # Compile TypeScript
+npm run electron  # Launch desktop app
 ```
 
 ## License

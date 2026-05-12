@@ -10,7 +10,7 @@ import {
 } from "@anthropic-ai/claude-agent-sdk";
 import { logger } from "../logger.js";
 import { execSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, realpathSync } from "node:fs";
 import { join, dirname } from "node:path";
 
 // ---------------------------------------------------------------------------
@@ -128,17 +128,19 @@ async function* singleUserMessage(
 
 function resolveGlobalClaudeCliPath(): string | undefined {
   try {
-    const claudeBin = execSync("which claude", { encoding: "utf8" }).trim();
-    // Resolve symlinks to get the actual file
-    const realBin = execSync(`readlink -f "${claudeBin}" 2>/dev/null || realpath "${claudeBin}" 2>/dev/null || echo "${claudeBin}"`, { encoding: "utf8" }).trim();
-    // On npm global installs, the binary itself is cli.js
+    const isWin = process.platform === "win32";
+    const whichCmd = isWin ? "where claude" : "which claude";
+    const claudeBin = execSync(whichCmd, { encoding: "utf8" }).trim().split("\n")[0];
+
+    const realBin = realpathSync(claudeBin);
+
     if (realBin.endsWith(".js") && existsSync(realBin)) return realBin;
-    // Otherwise look for cli.js next to the binary
     const cliJs = join(dirname(realBin), "cli.js");
     if (existsSync(cliJs)) return cliJs;
-    // Try npm global prefix
+
     const npmPrefix = execSync("npm config get prefix", { encoding: "utf8" }).trim();
-    const npmCli = join(npmPrefix, "lib", "node_modules", "@anthropic-ai", "claude-code", "cli.js");
+    const subdir = isWin ? "node_modules" : join("lib", "node_modules");
+    const npmCli = join(npmPrefix, subdir, "@anthropic-ai", "claude-code", "cli.js");
     if (existsSync(npmCli)) return npmCli;
   } catch {
     // ignore

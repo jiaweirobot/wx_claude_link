@@ -2,10 +2,11 @@
 
 [English](README.md) | **中文**
 
-一个 [Claude Code](https://claude.ai/claude-code) Skill，将个人微信桥接到本地 Claude Code。通过手机微信与 Claude 对话——文字、图片、权限审批、斜杠命令，全部支持。
+将个人微信桥接到本地 Claude Code 的工具。通过手机微信与 Claude 对话——文字、图片、权限审批、斜杠命令，全部支持。提供 CLI 和 **Electron 桌面 GUI** 两种运行模式。
 
 ## 功能特性
 
+- **桌面 GUI** — Electron 应用，一键扫码登录、启停服务、查看状态和日志
 - **实时进度推送** — 实时查看 Claude 的工具调用（🔧 Bash、📖 Read、🔍 Glob…）
 - **思考预览** — 每次工具调用前展示 💭 Claude 的推理摘要（前 300 字）
 - **中断支持** — 在 Claude 处理中发送新消息可打断当前任务
@@ -15,25 +16,22 @@
 - 权限审批——在微信中回复 `y`/`n` 控制工具执行
 - 斜杠命令——`/help`、`/clear`、`/model`、`/prompt`、`/status`、`/skills` 等
 - 在微信中触发任意已安装的 Claude Code Skill
-- 跨平台——macOS（launchd）、Linux（systemd + nohup 回退）
+- 跨平台——**Windows**、macOS、Linux
 - 会话持久化——跨消息恢复上下文
 - 限频保护——微信 API 限频时自动指数退避重试
 
 ## 前置条件
 
 - Node.js >= 18
-- macOS 或 Linux
 - 个人微信账号（需扫码绑定）
 - 已安装 [Claude Code](https://docs.anthropic.com/en/docs/claude-code)（含 `@anthropic-ai/claude-agent-sdk`）
   > **注意：** 该 SDK 支持第三方 API 提供商（如 OpenRouter、AWS Bedrock、自定义 OpenAI 兼容接口）——按需设置 `ANTHROPIC_BASE_URL` 与 `ANTHROPIC_API_KEY` 即可。
 
 ## 安装
 
-克隆到 Claude Code skills 目录：
-
 ```bash
-git clone https://github.com/Wechat-ggGitHub/wechat-claude-code.git ~/.claude/skills/wechat-claude-code
-cd ~/.claude/skills/wechat-claude-code
+git clone https://github.com/Wechat-ggGitHub/wechat-claude-code.git
+cd wechat-claude-code
 npm install
 ```
 
@@ -41,37 +39,41 @@ npm install
 
 ## 快速开始
 
-### 1. 首次设置
-
-扫码绑定微信账号：
+### 方式 A：桌面 GUI（推荐）
 
 ```bash
-cd ~/.claude/skills/wechat-claude-code
+npm run electron
+```
+
+点击 **"扫码登录"** 扫描二维码，然后点击 **"启动服务"** 即可。
+
+### 方式 B：命令行
+
+#### 1. 首次设置
+
+```bash
 npm run setup
 ```
 
 会自动弹出二维码图片，用微信扫码后配置工作目录。
 
-### 2. 启动服务
+#### 2. 启动服务
 
 ```bash
-npm run daemon -- start
+# 前台运行
+node dist/main.js start
+
+# 后台守护进程
+node scripts/daemon.js start
 ```
 
-- **macOS**：注册 launchd 代理，实现开机自启和自动重启
-- **Linux**：使用 systemd 用户服务（无 systemd 时回退到 nohup）
-
-### 3. 在微信中聊天
-
-直接在微信中发消息即可与 Claude Code 对话。
-
-### 4. 管理服务
+#### 3. 管理服务
 
 ```bash
-npm run daemon -- status   # 查看运行状态
-npm run daemon -- stop     # 停止服务
-npm run daemon -- restart  # 重启服务（代码更新后使用）
-npm run daemon -- logs     # 查看最近日志
+node scripts/daemon.js status    # 查看运行状态
+node scripts/daemon.js stop      # 停止服务
+node scripts/daemon.js restart   # 重启服务
+node scripts/daemon.js logs      # 查看最近日志
 ```
 
 ## 微信端命令
@@ -112,14 +114,48 @@ npm run daemon -- logs     # 查看最近日志
 ## 工作原理
 
 ```
-微信（手机） ←→ ilink bot API ←→ Node.js 守护进程 ←→ Claude Code SDK（本地）
+微信（手机） ←→ ilink bot API ←→ Node.js 桥接服务 ←→ Claude Code SDK（本地）
+                                       ↑
+                            CLI 或 Electron 桌面 GUI
 ```
 
-- 守护进程通过长轮询监听微信 ilink bot API 的新消息
+- 桥接服务通过长轮询监听微信 ilink bot API 的新消息
 - 消息通过 `@anthropic-ai/claude-agent-sdk` 转发给 Claude Code
 - 工具调用和思考摘要在 Claude 工作时实时推送
 - 回复发送回微信，限频时自动重试
-- 平台原生服务管理保持守护进程运行（macOS 使用 launchd，Linux 使用 systemd/nohup）
+- 桌面 GUI 提供可视化控制（登录、启停、状态、日志）
+
+## 项目结构
+
+```
+src/
+├── daemon.ts            # 核心守护进程控制器 (start/stop/getStatus)
+├── login-flow.ts        # QR 扫码登录流程（与 UI 解耦）
+├── main.ts              # CLI 入口
+├── session.ts           # 会话状态持久化
+├── permission.ts        # 权限代理（y/n 审批 + 超时）
+├── config.ts            # 配置文件管理
+├── claude/
+│   ├── provider.ts      # Claude Agent SDK 封装（流式响应、权限桥接）
+│   └── skill-scanner.ts # 扫描已安装的 Skill
+├── commands/
+│   ├── router.ts        # 斜杠命令分发器
+│   └── handlers.ts      # 命令实现
+└── wechat/
+    ├── api.ts           # ilink bot HTTP 客户端
+    ├── monitor.ts       # 长轮询消息循环
+    ├── send.ts          # 消息发送
+    ├── login.ts         # QR 码登录协议
+    ├── media.ts         # 图片下载 + 解密
+    └── ...              # 类型定义、加密、CDN、账号存储
+
+electron/
+├── main.cjs             # Electron 主进程（IPC 处理）
+├── preload.cjs          # 安全 IPC 桥接
+├── index.html           # 桌面 UI
+├── renderer.js          # 前端逻辑
+└── styles.css           # 微信绿色主题样式
+```
 
 ## 数据目录
 
@@ -134,11 +170,16 @@ npm run daemon -- logs     # 查看最近日志
 └── logs/           # 运行日志（每日轮转，保留 30 天）
 ```
 
+## 架构文档
+
+详细的运行逻辑、消息流程图和模块依赖分析见 [ARCHITECTURE.md](ARCHITECTURE.md)。
+
 ## 开发
 
 ```bash
-npm run dev    # 监听模式——TypeScript 文件变更时自动编译
-npm run build  # 编译 TypeScript
+npm run dev       # 监听模式——TypeScript 文件变更时自动编译
+npm run build     # 编译 TypeScript
+npm run electron  # 启动桌面应用
 ```
 
 ## License

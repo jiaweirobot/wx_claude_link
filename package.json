@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Chat with Claude Code from WeChat - a Claude Code Skill that bridges personal WeChat to local Claude Code",
   "type": "module",
+  "main": "electron/main.cjs",
   "scripts": {
     "build": "tsc",
     "postinstall": "npm run build",
@@ -11,7 +12,9 @@
     "dev": "tsc --watch",
     "test": "node --test dist/tests/*.test.js",
     "setup": "node dist/main.js setup",
-    "daemon": "bash scripts/daemon.sh"
+    "daemon": "node scripts/daemon.js",
+    "electron": "electron .",
+    "dist": "electron-builder --win"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.1.0",
@@ -22,9 +25,34 @@
     "@types/node": "^22.0.0",
     "@types/qrcode": "^1.5.6",
     "@types/qrcode-terminal": "^0.12.0",
+    "electron": "^42.0.1",
+    "electron-builder": "^26.8.1",
     "typescript": "^5.7.0"
   },
-  "keywords": ["wechat", "claude-code", "claude", "bridge", "chat", "skill"],
+  "build": {
+    "appId": "com.wechat-claude-code.desktop",
+    "productName": "WeChat Claude Code",
+    "win": {
+      "target": "nsis"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "extraMetadata": {
+      "main": "electron/main.cjs"
+    }
+  },
+  "keywords": [
+    "wechat",
+    "claude-code",
+    "claude",
+    "bridge",
+    "chat",
+    "skill"
+  ],
   "author": "Wechat-ggGitHub",
   "license": "MIT",
   "repository": {

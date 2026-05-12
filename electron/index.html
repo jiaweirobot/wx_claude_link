@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WeChat Claude Code</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <h1>WeChat Claude Code</h1>
+      </div>
+      <div class="header-right">
+        <span class="status-indicator" id="statusDot"></span>
+        <span class="status-text" id="statusText">未启动</span>
+      </div>
+    </header>
+
+    <!-- Main content -->
+    <main class="main">
+      <!-- Control panel -->
+      <section class="controls">
+        <button class="btn btn-primary" id="btnLogin">
+          <span class="btn-icon">📱</span>
+          扫码登录
+        </button>
+        <button class="btn btn-success" id="btnStart">
+          <span class="btn-icon">▶</span>
+          启动服务
+        </button>
+        <button class="btn btn-danger" id="btnStop" disabled>
+          <span class="btn-icon">⏹</span>
+          停止服务
+        </button>
+        <button class="btn btn-secondary" id="btnRefreshStatus">
+          <span class="btn-icon">🔄</span>
+          刷新状态
+        </button>
+      </section>
+
+      <!-- QR Code area -->
+      <section class="qr-section" id="qrSection" style="display:none;">
+        <div class="qr-container">
+          <img id="qrImage" alt="QR Code" />
+          <p class="qr-hint" id="qrHint">请用微信扫描二维码</p>
+        </div>
+      </section>
+
+      <!-- Info panel -->
+      <section class="info-panel" id="infoPanel">
+        <div class="info-item">
+          <label>账号ID:</label>
+          <span id="infoAccountId">-</span>
+        </div>
+        <div class="info-item">
+          <label>会话状态:</label>
+          <span id="infoSessionState">-</span>
+        </div>
+      </section>
+
+      <!-- Log panel -->
+      <section class="log-section">
+        <div class="log-header">
+          <h3>运行日志</h3>
+          <button class="btn btn-small" id="btnLoadLogs">加载日志</button>
+        </div>
+        <div class="log-container" id="logContainer">
+          <div class="log-placeholder">点击"加载日志"或启动服务后查看日志</div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
