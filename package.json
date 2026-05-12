@@ -14,7 +14,10 @@
     "setup": "node dist/main.js setup",
     "daemon": "node scripts/daemon.js",
     "electron": "electron .",
-    "dist": "electron-builder --win"
+    "dist": "electron-builder",
+    "dist:win": "electron-builder --win",
+    "dist:mac": "electron-builder --mac",
+    "dist:linux": "electron-builder --linux"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.1.0",
@@ -32,8 +35,8 @@
   "build": {
     "appId": "com.wechat-claude-code.desktop",
     "productName": "WeChat Claude Code",
-    "win": {
-      "target": "nsis"
+    "directories": {
+      "output": "release"
     },
     "files": [
       "dist/**/*",
@@ -41,6 +44,21 @@
       "node_modules/**/*",
       "package.json"
     ],
+    "win": {
+      "target": ["nsis"]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "mac": {
+      "target": ["dmg", "zip"],
+      "category": "public.app-category.developer-tools"
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "category": "Development"
+    },
     "extraMetadata": {
       "main": "electron/main.cjs"
     }
