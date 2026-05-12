@@ -59,6 +59,7 @@
       "target": ["AppImage", "deb"],
       "category": "Development"
     },
+    "publish": null,
     "extraMetadata": {
       "main": "electron/main.cjs"
     }
@@ -75,6 +76,6 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Wechat-ggGitHub/wechat-claude-code.git"
+    "url": "https://github.com/jiaweirobot/wx_claude_link.git"
   }
 }
