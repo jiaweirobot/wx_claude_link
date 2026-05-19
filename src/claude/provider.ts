@@ -127,10 +127,11 @@ async function* singleUserMessage(
 // ---------------------------------------------------------------------------
 
 function resolveGlobalClaudeCliPath(): string | undefined {
+  const start = Date.now();
   try {
     const isWin = process.platform === "win32";
     const whichCmd = isWin ? "where claude" : "which claude";
-    const claudeBin = execSync(whichCmd, { encoding: "utf8" }).trim().split("\n")[0];
+    const claudeBin = execSync(whichCmd, { encoding: "utf8", timeout: 5000 }).trim().split("\n")[0];
 
     const realBin = realpathSync(claudeBin);
 
@@ -138,12 +139,14 @@ function resolveGlobalClaudeCliPath(): string | undefined {
     const cliJs = join(dirname(realBin), "cli.js");
     if (existsSync(cliJs)) return cliJs;
 
-    const npmPrefix = execSync("npm config get prefix", { encoding: "utf8" }).trim();
+    const npmPrefix = execSync("npm config get prefix", { encoding: "utf8", timeout: 5000 }).trim();
     const subdir = isWin ? "node_modules" : join("lib", "node_modules");
     const npmCli = join(npmPrefix, subdir, "@anthropic-ai", "claude-code", "cli.js");
     if (existsSync(npmCli)) return npmCli;
   } catch {
     // ignore
+  } finally {
+    logger.debug("resolveGlobalClaudeCliPath took", { ms: Date.now() - start });
   }
   return undefined;
 }
@@ -169,6 +172,7 @@ export async function claudeQuery(options: QueryOptions): Promise<QueryResult> {
     abortController,
   } = options;
 
+  const queryStart = Date.now();
   logger.info("Starting Claude query", {
     cwd,
     model,
@@ -367,6 +371,7 @@ export async function claudeQuery(options: QueryOptions): Promise<QueryResult> {
     sessionId,
     textLength: fullText.length,
     hasError: !!errorMessage,
+    durationMs: Date.now() - queryStart,
   });
 
   return {

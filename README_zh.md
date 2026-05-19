@@ -1,8 +1,22 @@
 # wechat-claude-code
 
+[![GitHub Release](https://img.shields.io/github/v/release/jiaweirobot/wx_claude_link?style=flat-square)](https://github.com/jiaweirobot/wx_claude_link/releases/latest)
+[![Build](https://img.shields.io/github/actions/workflow/status/jiaweirobot/wx_claude_link/build.yml?style=flat-square)](https://github.com/jiaweirobot/wx_claude_link/actions/workflows/build.yml)
+[![License](https://img.shields.io/github/license/jiaweirobot/wx_claude_link?style=flat-square)](LICENSE)
+
 [English](README.md) | **中文**
 
 将个人微信桥接到本地 Claude Code 的工具。通过手机微信与 Claude 对话——文字、图片、权限审批、斜杠命令，全部支持。提供 CLI 和 **Electron 桌面 GUI** 两种运行模式。
+
+## 下载安装
+
+| 平台 | 下载 | 说明 |
+|------|------|------|
+| Windows (x64) | [**最新版本**](https://github.com/jiaweirobot/wx_claude_link/releases/latest) | `.exe` 安装包 |
+
+> macOS 和 Linux 支持即将推出。
+
+也可以在 [Releases](https://github.com/jiaweirobot/wx_claude_link/releases) 页面下载历史版本。
 
 ## 界面截图
 
@@ -34,8 +48,8 @@
 ## 安装
 
 ```bash
-git clone https://github.com/Wechat-ggGitHub/wechat-claude-code.git
-cd wechat-claude-code
+git clone https://github.com/jiaweirobot/wx_claude_link.git
+cd wx_claude_link
 npm install
 ```
 

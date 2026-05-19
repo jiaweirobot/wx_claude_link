@@ -153,6 +153,16 @@ ipcMain.handle('dialog:selectFolder', async () => {
   return result.filePaths[0];
 });
 
+ipcMain.handle('daemon:changeCwd', async (_event, newPath) => {
+  if (!daemon) return { success: false, error: '服务未启动' };
+  try {
+    daemon.changeCwd(newPath);
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
 // ---------------------------------------------------------------------------
 // App lifecycle
 // ---------------------------------------------------------------------------

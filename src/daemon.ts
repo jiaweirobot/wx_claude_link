@@ -9,7 +9,7 @@ import { createSessionStore, type Session } from './session.js';
 import { createPermissionBroker } from './permission.js';
 import { routeCommand, type CommandContext, type CommandResult } from './commands/router.js';
 import { claudeQuery, type QueryOptions } from './claude/provider.js';
-import { loadConfig } from './config.js';
+import { loadConfig, saveConfig } from './config.js';
 import { logger } from './logger.js';
 import { MessageType, type WeixinMessage } from './wechat/types.js';
 
@@ -27,6 +27,7 @@ export interface DaemonStatus {
   running: boolean;
   accountId?: string;
   sessionState?: string;
+  workingDirectory?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -117,7 +118,7 @@ export function createDaemon(events?: DaemonEvents) {
 
     const callbacks: MonitorCallbacks = {
       onMessage: async (msg: WeixinMessage) => {
-        await handleMessage(msg, account, session, sessionStore, permissionBroker, sender, config, sharedCtx, activeControllers);
+        await handleMessage(msg, account, session, sessionStore, permissionBroker, sender, config, sharedCtx, activeControllers, emit);
       },
       onSessionExpired: () => {
         logger.warn('Session expired, will keep retrying...');
@@ -156,10 +157,24 @@ export function createDaemon(events?: DaemonEvents) {
       running,
       accountId: currentAccountId,
       sessionState: currentSession?.state,
+      workingDirectory: currentSession?.workingDirectory || loadConfig().workingDirectory,
     };
   }
 
-  return { start, stop, getStatus };
+  function changeCwd(newPath: string): void {
+    if (currentSession) {
+      currentSession.workingDirectory = newPath;
+      if (currentAccountId) {
+        createSessionStore().save(currentAccountId, currentSession);
+      }
+    }
+    const cfg = loadConfig();
+    cfg.workingDirectory = newPath;
+    saveConfig(cfg);
+    emit(`工作目录已切换: ${newPath}`);
+  }
+
+  return { start, stop, getStatus, changeCwd };
 }
 
 // ---------------------------------------------------------------------------
@@ -176,6 +191,7 @@ async function handleMessage(
   config: ReturnType<typeof loadConfig>,
   sharedCtx: { lastContextToken: string },
   activeControllers: Map<string, AbortController>,
+  emit: (msg: string) => void,
 ): Promise<void> {
   if (msg.message_type !== MessageType.USER) return;
   if (!msg.from_user_id || !msg.item_list) return;
@@ -186,6 +202,9 @@ async function handleMessage(
 
   const userText = extractTextFromItems(msg.item_list);
   const imageItem = extractFirstImageUrl(msg.item_list);
+
+  logger.info('收到用户消息', { from: fromUserId, text: userText || '(图片)', hasImage: !!imageItem });
+  emit(`📩 用户: ${userText || '(图片)'}`);
 
   if (session.state === 'processing') {
     if (userText.startsWith('/clear')) {
@@ -260,7 +279,7 @@ async function handleMessage(
     if (result.handled && result.claudePrompt) {
       await sendToClaude(
         result.claudePrompt, imageItem, fromUserId, contextToken,
-        account, session, sessionStore, permissionBroker, sender, config, activeControllers,
+        account, session, sessionStore, permissionBroker, sender, config, activeControllers, emit,
       );
       return;
     }
@@ -275,7 +294,7 @@ async function handleMessage(
 
   await sendToClaude(
     userText, imageItem, fromUserId, contextToken,
-    account, session, sessionStore, permissionBroker, sender, config, activeControllers,
+    account, session, sessionStore, permissionBroker, sender, config, activeControllers, emit,
   );
 }
 
@@ -291,6 +310,7 @@ async function sendToClaude(
   sender: ReturnType<typeof createSender>,
   config: ReturnType<typeof loadConfig>,
   activeControllers: Map<string, AbortController>,
+  emit: (msg: string) => void,
 ): Promise<void> {
   session.state = 'processing';
   sessionStore.save(account.accountId, session);
@@ -395,6 +415,9 @@ async function sendToClaude(
       if (result.error) {
         logger.warn('Claude query had error but returned text, using text', { error: result.error });
       }
+      const preview = result.text.slice(0, 300) + (result.text.length > 300 ? '...' : '');
+      logger.info('Claude 返回内容', { text: preview });
+      emit(`🤖 Claude: ${preview}`);
       sessionStore.addChatMessage(session, 'assistant', result.text);
       if (!anySent) {
         const chunks = splitMessage(result.text);

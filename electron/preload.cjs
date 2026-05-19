@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld('api', {
   getStatus: () => ipcRenderer.invoke('daemon:status'),
   getLogs: () => ipcRenderer.invoke('logs:read'),
   selectFolder: () => ipcRenderer.invoke('dialog:selectFolder'),
+  changeCwd: (path) => ipcRenderer.invoke('daemon:changeCwd', path),
 
   onQrCode: (cb) => {
     ipcRenderer.on('qr-code', (_, data) => cb(data));

@@ -1,8 +1,22 @@
 # wechat-claude-code
 
+[![GitHub Release](https://img.shields.io/github/v/release/jiaweirobot/wx_claude_link?style=flat-square)](https://github.com/jiaweirobot/wx_claude_link/releases/latest)
+[![Build](https://img.shields.io/github/actions/workflow/status/jiaweirobot/wx_claude_link/build.yml?style=flat-square)](https://github.com/jiaweirobot/wx_claude_link/actions/workflows/build.yml)
+[![License](https://img.shields.io/github/license/jiaweirobot/wx_claude_link?style=flat-square)](LICENSE)
+
 **English** | [中文](README_zh.md)
 
 A tool that bridges personal WeChat to your local Claude Code. Chat with Claude from your phone via WeChat — text, images, permission approvals, slash commands, all supported. Includes both CLI and **Electron desktop GUI**.
+
+## Download
+
+| Platform | Download | Note |
+|----------|----------|------|
+| Windows (x64) | [**Latest Release**](https://github.com/jiaweirobot/wx_claude_link/releases/latest) | `.exe` installer |
+
+> macOS and Linux support coming soon.
+
+Or download a specific version from the [Releases](https://github.com/jiaweirobot/wx_claude_link/releases) page.
 
 ## Screenshot
 
@@ -34,8 +48,8 @@ A tool that bridges personal WeChat to your local Claude Code. Chat with Claude 
 ## Installation
 
 ```bash
-git clone https://github.com/Wechat-ggGitHub/wechat-claude-code.git
-cd wechat-claude-code
+git clone https://github.com/jiaweirobot/wx_claude_link.git
+cd wx_claude_link
 npm install
 ```
 

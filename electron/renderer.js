@@ -13,6 +13,8 @@ const qrHint = $('#qrHint');
 const logContainer = $('#logContainer');
 const infoAccountId = $('#infoAccountId');
 const infoSessionState = $('#infoSessionState');
+const infoCwd = $('#infoCwd');
+const btnChangeCwd = $('#btnChangeCwd');
 
 let isRunning = false;
 
@@ -102,7 +104,24 @@ btnRefreshStatus.addEventListener('click', async () => {
   setStatus(status.running, status.running ? '运行中' : '未启动');
   infoAccountId.textContent = status.accountId || '-';
   infoSessionState.textContent = status.sessionState || '-';
+  if (status.workingDirectory) {
+    infoCwd.textContent = status.workingDirectory;
+    infoCwd.title = status.workingDirectory;
+  }
   appendLog('状态已刷新');
+});
+
+btnChangeCwd.addEventListener('click', async () => {
+  const folder = await window.api.selectFolder();
+  if (!folder) return;
+  const result = await window.api.changeCwd(folder);
+  if (result.success) {
+    infoCwd.textContent = folder;
+    infoCwd.title = folder;
+    appendLog(`工作目录已切换: ${folder}`);
+  } else {
+    appendLog('切换目录失败: ' + (result.error || ''));
+  }
 });
 
 btnLoadLogs.addEventListener('click', async () => {
@@ -163,4 +182,8 @@ window.api.onLog((msg) => {
   setStatus(status.running, status.running ? '运行中' : '未启动');
   if (status.accountId) infoAccountId.textContent = status.accountId;
   if (status.sessionState) infoSessionState.textContent = status.sessionState;
+  if (status.workingDirectory) {
+    infoCwd.textContent = status.workingDirectory;
+    infoCwd.title = status.workingDirectory;
+  }
 })();

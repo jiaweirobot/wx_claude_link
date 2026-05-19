@@ -7,17 +7,7 @@ on:
 
 jobs:
   build:
-    strategy:
-      matrix:
-        include:
-          - os: windows-latest
-            script: dist:win
-          - os: macos-latest
-            script: dist:mac
-          - os: ubuntu-latest
-            script: dist:linux
-
-    runs-on: ${{ matrix.os }}
+    runs-on: windows-latest
 
     steps:
       - uses: actions/checkout@v4
@@ -28,19 +18,15 @@ jobs:
 
       - run: npm ci
 
-      - run: npm run ${{ matrix.script }}
+      - run: npm run dist:win
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/upload-artifact@v4
         with:
-          name: release-${{ matrix.os }}
+          name: release-windows
           path: |
             release/*.exe
-            release/*.dmg
-            release/*.zip
-            release/*.AppImage
-            release/*.deb
 
   release:
     needs: build
@@ -50,16 +36,23 @@ jobs:
       contents: write
 
     steps:
+      - uses: actions/checkout@v4
+
       - uses: actions/download-artifact@v4
         with:
-          merge-multiple: true
+          name: release-windows
+          path: artifacts
 
-      - uses: softprops/action-gh-release@v2
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
-          files: |
-            *.exe
-            *.dmg
-            *.zip
-            *.AppImage
-            *.deb
+          files: artifacts/*
           generate_release_notes: true
+          body: |
+            ## Download
+
+            | Platform | File |
+            |----------|------|
+            | Windows (x64) | See assets below |
+
+            > **Note:** Currently only Windows is supported. macOS and Linux support coming soon.

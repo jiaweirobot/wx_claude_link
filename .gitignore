@@ -4,3 +4,4 @@ dist/
 .env
 .wechat-claude-code/
 release/
+.claude/
